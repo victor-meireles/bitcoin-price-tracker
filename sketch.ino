@@ -4,6 +4,7 @@
 #include <WiFiClientSecure.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
+#include "secrets.h"
 
 #define SCREEN_WIDTH 128 
 #define SCREEN_HEIGHT 64 
@@ -11,9 +12,8 @@
 #define SCREEN_ADDRESS 0x3C 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
-const char* ssid = "";
-const char* password = "";
-// URL HTTPS obrigatória
+const char* ssid = SECRET_SSID;
+const char* password = SECRET_PASS;
 const String url = "https://min-api.cryptocompare.com/data/price?fsym=BTC&tsyms=USD";
 
 const unsigned char bitcoinIcon [] PROGMEM = {
@@ -34,31 +34,51 @@ void printCenter(const String buf, int x, int y) {
 
 void setup() {
   Serial.begin(115200);
-  Wire.begin(8, 9); // Pinos I2C ESP32-C3
+  Wire.begin(8, 9);
   
   if (!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
     for (;;);
   }
 
+  // --- MENSAGENS INICIAIS (Aparecem apenas 1x no Boot) ---
   display.clearDisplay();
+  display.setTextSize(1);
   display.setTextColor(SSD1306_WHITE);
+  display.setCursor(0,0);
+  
+  // Log de Início
+  Serial.println("Iniciando Sistema...");
+  display.println("Iniciando Sistema...");
+  
+  // Log de WiFi
+  Serial.println("Conectando ao WiFi...");
+  display.println("Conectando ao WiFi:");
   display.display();
 
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
+    display.print("."); 
+    display.display();
   }
+  
+  // Confirmação de Conexão
   Serial.println("\nWiFi OK!");
+  display.println("\nWiFi OK!");
+  
+  Serial.println("Buscando Preço inicial...");
+  display.println("Buscando Preco...");
+  display.display();
+  
+  delay(2000); 
 }
 
 void loop() {
   if (WiFi.status() == WL_CONNECTED) {
     WiFiClientSecure client;
-    client.setInsecure(); // Pula a validação de certificado SSL
-    
+    client.setInsecure();
     HTTPClient http;
-    Serial.print("Conectando via HTTPS...\n");
     
     if (http.begin(client, url)) {
       int httpCode = http.GET();
@@ -66,26 +86,27 @@ void loop() {
       if (httpCode == HTTP_CODE_OK) {
         String payload = http.getString();
         StaticJsonDocument<128> doc;
-        DeserializationError error = deserializeJson(doc, payload);
+        deserializeJson(doc, payload);
 
-        if (!error) {
-          float price = doc["USD"];
-          Serial.print("Sucesso!\n");
-          Serial.print("BTC: ");
-          Serial.println(price);
+        float price = doc["USD"];
 
-          display.clearDisplay();
-          display.drawBitmap((128/2)-(24/2), 0, bitcoinIcon, 24, 24, WHITE);
-          display.setTextSize(1);
-          printCenter("BITCOIN (USD)", 0, 32);
-          printCenter("$" + String(price, 2), 0, 48);
-          display.display();
-        }
+        // --- SERIAL: Log Técnico ---
+        Serial.print("[HTTP] Sucesso! Preço atual: $");
+        Serial.println(price);
+
+        // --- OLED: Interface do Usuário ---
+        display.clearDisplay();
+        display.drawBitmap((128/2)-(24/2), 0, bitcoinIcon, 24, 24, WHITE);
+        display.setTextSize(1);
+        printCenter("BITCOIN (USD)", 0, 32);
+        printCenter("$" + String(price, 2), 0, 48);
+        display.display();
+        
       } else {
-        Serial.printf("Erro HTTP: %d\n", httpCode);
+        Serial.printf("[HTTP] Erro na requisição: %d\n", httpCode);
       }
       http.end();
     }
   }
-  delay(15000);
+  delay(15000); 
 }

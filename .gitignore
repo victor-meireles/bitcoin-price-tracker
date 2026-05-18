@@ -1,0 +1,10 @@
+# Ignorar a pasta oculta de build do Wokwi (arquivos .elf, .bin, etc.)
+.wokwi/
+build/
+
+# Ignorar credenciais locais
+secrets.h
+
+# Ignorar arquivos temporários do sistema operacional
+.DS_Store
+Thumbs.db

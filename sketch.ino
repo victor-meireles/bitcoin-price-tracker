@@ -12,9 +12,14 @@
 #define SCREEN_ADDRESS 0x3C 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
+// Pinos dos LEDs conforme seu diagram.json
+#define LED_VERDE 10
+#define LED_VERMELHO 7
+
 const char* ssid = SECRET_SSID;
 const char* password = SECRET_PASS;
-const String url = "https://min-api.cryptocompare.com/data/price?fsym=BTC&tsyms=USD";
+// URL alterada para obter o dado de variação de 24h
+const String url = "https://min-api.cryptocompare.com/data/pricemultifull?fsyms=BTC&tsyms=USD";
 
 const unsigned char bitcoinIcon [] PROGMEM = {
   0x00, 0x7e, 0x00, 0x03, 0xff, 0xc0, 0x07, 0x81, 0xe0, 0x0e, 0x00, 0x70, 0x18, 0x28, 0x18, 0x30, 
@@ -36,21 +41,20 @@ void setup() {
   Serial.begin(115200);
   Wire.begin(8, 9);
   
+  pinMode(LED_VERDE, OUTPUT);
+  pinMode(LED_VERMELHO, OUTPUT);
+  
   if (!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
     for (;;);
   }
 
-  // --- MENSAGENS INICIAIS (Aparecem apenas 1x no Boot) ---
   display.clearDisplay();
   display.setTextSize(1);
   display.setTextColor(SSD1306_WHITE);
   display.setCursor(0,0);
   
-  // Log de Início
   Serial.println("Iniciando Sistema...");
   display.println("Iniciando Sistema...");
-  
-  // Log de WiFi
   Serial.println("Conectando ao WiFi...");
   display.println("Conectando ao WiFi:");
   display.display();
@@ -63,12 +67,9 @@ void setup() {
     display.display();
   }
   
-  // Confirmação de Conexão
   Serial.println("\nWiFi OK!");
   display.println("\nWiFi OK!");
-  
-  Serial.println("Buscando Preço inicial...");
-  display.println("Buscando Preco...");
+  display.println("Buscando Dados...");
   display.display();
   
   delay(2000); 
@@ -85,25 +86,42 @@ void loop() {
       
       if (httpCode == HTTP_CODE_OK) {
         String payload = http.getString();
-        StaticJsonDocument<128> doc;
+        // Aumentado para 1536 pois o JSON Full é maior que o simples
+        StaticJsonDocument<1536> doc;
         deserializeJson(doc, payload);
 
-        float price = doc["USD"];
+        float price = doc["RAW"]["BTC"]["USD"]["PRICE"];
+        float pct24h = doc["RAW"]["BTC"]["USD"]["CHANGEPCT24HOUR"];
+
+        // --- Lógica dos LEDs baseada na variação de 24h ---
+        if (pct24h > 0) {
+          digitalWrite(LED_VERDE, HIGH);
+          digitalWrite(LED_VERMELHO, LOW);
+        } else if (pct24h < 0) {
+          digitalWrite(LED_VERDE, LOW);
+          digitalWrite(LED_VERMELHO, HIGH);
+        }
 
         // --- SERIAL: Log Técnico ---
-        Serial.print("[HTTP] Sucesso! Preço atual: $");
-        Serial.println(price);
+        Serial.printf("[HTTP] Preço: $%.2f | Variação 24h: %.2f%%\n", price, pct24h);
 
         // --- OLED: Interface do Usuário ---
         display.clearDisplay();
         display.drawBitmap((128/2)-(24/2), 0, bitcoinIcon, 24, 24, WHITE);
         display.setTextSize(1);
         printCenter("BITCOIN (USD)", 0, 32);
-        printCenter("$" + String(price, 2), 0, 48);
+        
+        // Preço atualizado
+        printCenter("$" + String(price, 2), 0, 44);
+        
+        // Porcentagem de 24h
+        String pctStr = (pct24h > 0 ? "+" : "") + String(pct24h, 2) + "% (24h)";
+        printCenter(pctStr, 0, 56);
+        
         display.display();
         
       } else {
-        Serial.printf("[HTTP] Erro na requisição: %d\n", httpCode);
+        Serial.printf("[HTTP] Erro: %d\n", httpCode);
       }
       http.end();
     }

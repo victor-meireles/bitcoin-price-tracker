@@ -3,40 +3,68 @@
   "author": "Victor",
   "editor": "wokwi",
   "parts": [
-    { "type": "board-esp32-c3-devkitm-1", "id": "esp", "top": -28.78, "left": 40.21, "attrs": {} },
-    {
-      "type": "wokwi-led",
-      "id": "led_verde",
-      "top": -90,
-      "left": 42.2,
-      "attrs": { "color": "green" }
-    },
-    {
-      "type": "wokwi-led",
-      "id": "led_vermelho",
-      "top": -90,
-      "left": 90.2,
-      "attrs": { "color": "red" }
+    { 
+      "type": "board-esp32-c3-devkitm-1", 
+      "id": "esp", 
+      "top": 0, 
+      "left": 0, 
+      "attrs": {} 
     },
     {
       "type": "board-ssd1306",
       "id": "oled1",
-      "top": -44.86,
-      "left": -143.77,
+      "top": 40,
+      "left": -160,
       "attrs": { "i2cAddress": "0x3c" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led_verde",
+      "top": -120,
+      "left": 20,
+      "attrs": { "color": "green" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "res_verde",
+      "top": -60,
+      "left": 20,
+      "attrs": { "value": "220" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led_vermelho",
+      "top": -120,
+      "left": 100,
+      "attrs": { "color": "red" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "res_vermelho",
+      "top": -60,
+      "left": 100,
+      "attrs": { "value": "220" }
     }
   ],
   "connections": [
     [ "esp:TX", "$serialMonitor:RX", "", [] ],
     [ "esp:RX", "$serialMonitor:TX", "", [] ],
-    [ "oled1:GND", "esp:GND.1", "black", [ "v-33.22", "h94.21", "v49.8" ] ],
-    [ "oled1:VCC", "esp:3V3.1", "red", [ "v-25.91", "h76.89", "v7.77" ] ],
-    [ "oled1:SCL", "esp:9", "blue", [ "v-18.74", "h59.67", "v190.1", "h141.68", "v-111.19" ] ],
-    [ "oled1:SDA", "esp:8", "blue", [ "v-10.37", "h42.67", "v187.71", "h153.64", "v-108.2" ] ],
-    [ "esp:10", "led_verde:A", "green", [ "v0" ] ],
-    [ "esp:GND.2", "led_verde:C", "black", [ "v0" ] ],
-    [ "esp:7", "led_vermelho:A", "red", [ "v0" ] ],
-    [ "esp:GND.3", "led_vermelho:C", "black", [ "v0" ] ]
+    
+    // Conexões do Display OLED (Barramento I2C) 
+    [ "oled1:GND", "esp:GND.1", "black", [ "v0" ] ],
+    [ "oled1:VCC", "esp:3V3.1", "red", [ "v0" ] ],
+    [ "oled1:SCL", "esp:9", "green", [ "v0" ] ],
+    [ "oled1:SDA", "esp:8", "green", [ "v0" ] ],
+    
+    // Circuito do LED Verde (Pino 10 -> Resistor -> Anodo -> Catodo -> GND)
+    [ "esp:10", "res_verde:1", "green", [ "v0" ] ],
+    [ "res_verde:2", "led_verde:A", "green", [ "v0" ] ],
+    [ "led_verde:C", "esp:GND.2", "black", [ "v0" ] ],
+    
+    //  Circuito do LED Vermelho (Pino 7 -> Resistor -> Anodo -> Catodo -> GND)
+    [ "esp:7", "res_vermelho:1", "red", [ "v0" ] ],
+    [ "res_vermelho:2", "led_vermelho:A", "red", [ "v0" ] ],
+    [ "led_vermelho:C", "esp:GND.3", "black", [ "v0" ] ]
   ],
   "dependencies": {}
 }

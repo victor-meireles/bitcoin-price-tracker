@@ -2,6 +2,4 @@
 # See https://docs.wokwi.com/guides/libraries
 
 Adafruit SSD1306
-HttpClient
 ArduinoJson
-WiFi

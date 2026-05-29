@@ -15,8 +15,8 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 #define LED_VERMELHO 7
 #define BOTAO_POWER 3 
 
-const char* ssid = "Wokwi-GUEST";
-const char* password = "";
+const char* ssid = SECRET_SSID";
+const char* password = SECRET_PASS;
 const String url = "https://min-api.cryptocompare.com/data/pricemultifull?fsyms=BTC&tsyms=USD";
 
 // Máquina de Estados e Temporização Assíncrona
@@ -43,32 +43,34 @@ void printCenter(const String buf, int x, int y) {
 
 void verificarBotao() {
   bool estadoAtualBotao = digitalRead(BOTAO_POWER);
-  
+  static unsigned long ultimoTempoDebounce = 0;
+  const unsigned long tempoEsperaDebounce = 200; // Tempo em milissegundos para ignorar trepidações
+
   // Detecta que o botão estava pressionado (LOW) e acabou de ser solto (HIGH)
   if (estadoAtualBotao == HIGH && ultimoEstadoBotao == LOW) {
-    delay(50); // Filtro de debounce para eliminar ruídos mecânicos
-    sistemaAtivo = !sistemaAtivo; // Inverte o estado (Liga / Desliga)
-    
-    if (!sistemaAtivo) {
-      Serial.println("\n[SISTEMA] Modo de Espera Ativo (Desligado)");
-      // Apaga os LEDs e limpa o display imediatamente
-      digitalWrite(LED_VERDE, LOW);
-      digitalWrite(LED_VERMELHO, LOW);
-      display.clearDisplay();
-      display.display(); 
-    } else {
-      Serial.println("\n[SISTEMA] Retornando à busca ativa de dados...");
-      display.clearDisplay();
-      display.setTextSize(1);
-      display.setCursor(0,0);
-      display.println("Buscando Dados...");
-      display.display();
-      // Força a API a atualizar imediatamente ao religar
-      ultimoTempoRequisicao = millis() - intervaloRequisicao; 
+    // Só processa o clique se já passou tempo suficiente desde a última ação legítima
+    if (millis() - ultimoTempoDebounce > tempoEsperaDebounce) {
+      sistemaAtivo = !sistemaAtivo; // Inverte o estado (Liga / Desliga)
+      ultimoTempoDebounce = millis(); // Registra o momento deste clique válido
+      
+      if (!sistemaAtivo) {
+        Serial.println("\n[SISTEMA] Modo de Espera Ativo (Desligado)");
+        digitalWrite(LED_VERDE, LOW);
+        digitalWrite(LED_VERMELHO, LOW);
+        display.clearDisplay();
+        display.display(); 
+      } else {
+        Serial.println("\n[SISTEMA] Retornando à busca ativa de dados...");
+        display.clearDisplay();
+        display.setTextSize(1);
+        display.setCursor(0,0);
+        display.println("Buscando Dados...");
+        display.display();
+        ultimoTempoRequisicao = millis() - intervaloRequisicao; 
+      }
     }
   }
   
-  // Atualiza o histórico para a próxima leitura do loop
   ultimoEstadoBotao = estadoAtualBotao;
 }
 

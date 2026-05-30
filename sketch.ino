@@ -15,14 +15,14 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 #define LED_VERMELHO 7
 #define BOTAO_POWER 3 
 
-const char* ssid = "SECRET_SSID";
-const char* password = "SECRET_PASS";
+const char* ssid = SECRETS_SSID;
+const char* password = SECRETS_PASSWORD;
 const String url = "https://min-api.cryptocompare.com/data/pricemultifull?fsyms=BTC&tsyms=USD";
 
 // Máquina de Estados e Temporização Assíncrona
 bool sistemaAtivo = true;
 unsigned long ultimoTempoRequisicao = 0;
-const unsigned long intervaloRequisicao = 3600000; // 1h
+const unsigned long intervaloRequisicao = 3600000; // 1 hora
 bool ultimoEstadoBotao = HIGH;
 
 const unsigned char bitcoinIcon [] PROGMEM = {
@@ -44,7 +44,7 @@ void printCenter(const String buf, int x, int y) {
 void verificarBotao() {
   bool estadoAtualBotao = digitalRead(BOTAO_POWER);
   static unsigned long ultimoTempoDebounce = 0;
-  const unsigned long tempoEsperaDebounce = 200; // Tempo em milissegundos para ignorar trepidações
+  const unsigned long tempoEsperaDebounce = 200; // Tempo para ignorar trepidações
 
   // Detecta que o botão estava pressionado (LOW) e acabou de ser solto (HIGH)
   if (estadoAtualBotao == HIGH && ultimoEstadoBotao == LOW) {
@@ -66,6 +66,7 @@ void verificarBotao() {
         display.setCursor(0,0);
         display.println("Buscando Dados...");
         display.display();
+        // Força a requisição imediata ao ligar
         ultimoTempoRequisicao = millis() - intervaloRequisicao; 
       }
     }
@@ -168,16 +169,10 @@ void setup() {
   display.clearDisplay();
   display.display();
   
-  // Configura o temporizador inicial para disparar a API imediatamente no boot
-  ultimoTempoRequisicao = millis() - intervaloRequisicao;
-
-  display.clearDisplay();
-  display.display();
-  
-  // --- ADICIONE ESTA LINHA AQUI PARA SINCRONIZAR O ESTADO INICIAL ---
+  // Sincroniza o estado inicial do botão para evitar leituras fantasmas do boot
   ultimoEstadoBotao = digitalRead(BOTAO_POWER);
 
-  // Configura o temporizador inicial para disparar a API imediatamente no boot
+  // Configura o temporizador para disparar a primeira requisição HTTP imediatamente
   ultimoTempoRequisicao = millis() - intervaloRequisicao;
 }
 
@@ -185,7 +180,7 @@ void loop() {
   // Monitoramento do botão em tempo de execução contínuo (Sem travar por delays)
   verificarBotao();
 
-  // Executa o bloco de requisição apenas se o sistema estiver ligado E o tempo de 15s expirou
+  // Executa o bloco de requisição apenas se o sistema estiver ligado E o tempo expirou
   if (sistemaAtivo) {
     unsigned long tempoAtual = millis();
     if (tempoAtual - ultimoTempoRequisicao >= intervaloRequisicao) {

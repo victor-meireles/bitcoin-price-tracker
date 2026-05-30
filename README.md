@@ -128,7 +128,7 @@ stateDiagram-v2
         
         Atualizar_Saidas --> Verificar_Botao
         Espera_Inativa --> Verificar_Botao
-    end
+    }
 ```
 
 ---

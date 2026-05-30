@@ -93,42 +93,34 @@ O fluxo de software é estruturado como uma máquina de estados cooperativa no a
 stateDiagram-v2
     [*] --> Setup
     Setup --> Conectando_WiFi : Inicializar Periféricos & Interfaces
-    Conectando_WiFi --> Loop_Ativo : Conexão Estabelecida com Sucesso
+    Conectando_WiFi --> Verificar_Botao : Conexão Estabelecida
+
+    Verificar_Botao --> Botao_Pressionado : Clique Detectado (Debounced)
+    Verificar_Botao --> Checar_Estado : Sem Clique
     
-    state Loop_Ativo {
-        [*] --> Verificar_Botao
-        Verificar_Botao --> Botao_Pressionado : Clique Detectado? (Debounced)
-        
-        state Botao_Pressionado {
-            Toggle_Estado : Alterna entre Ativo e Standby
-        }
-        
-        Verificar_Botao --> Checar_Estado : Sem Clique
-        Toggle_Estado --> Checar_Estado
-        
-        state Checar_Estado <<choice>>
-        Checar_Estado --> Processar_Filtro_Tempo : se sistemaAtivo == true
-        Checar_Estado --> Desligar_Hardware : se sistemaAtivo == false
-        
-        state Desligar_Hardware {
-            Apagar_LEDs : Escreve LOW em GPIO 7 e 10
-            Limpar_OLED : Limpa buffer e envia display.display()
-            Espera_Inativa : Permanece em Standby (Sem chamadas à API)
-        }
-        
-        state Processar_Filtro_Tempo <<choice>>
-        Processar_Filtro_Tempo --> Requisicao_API : se Tempo Atual - Último Tempo maior ou igual a 1 Hora
-        Processar_Filtro_Tempo --> Verificar_Botao : se Tempo menor que 1 Hora
-        
-        state Requisicao_API {
-            GET_HTTP : Efetua chamada HTTPS GET
-            JSON_Parsing : Desserializa payload da API
-            Atualizar_Saidas : Atualiza LEDs e Renderiza Interface Gráfica
-        }
-        
-        Atualizar_Saidas --> Verificar_Botao
-        Espera_Inativa --> Verificar_Botao
+    Botao_Pressionado --> Checar_Estado : Alterna Ativo/Standby
+
+    state Checar_Estado <<choice>>
+    Checar_Estado --> Processar_Filtro_Tempo : sistemaAtivo == true
+    Checar_Estado --> Desligar_Hardware : sistemaAtivo == false
+
+    state Desligar_Hardware {
+        [*] --> Apagar_LEDs : Escreve LOW em GPIO 7 e 10
+        Apagar_LEDs --> Limpar_OLED : Limpa buffer e envia display.display()
+        Limpar_OLED --> Espera_Inativa : Permanece em Standby (Sem chamadas à API)
     }
+    Desligar_Hardware --> Verificar_Botao
+
+    state Processar_Filtro_Tempo <<choice>>
+    Processar_Filtro_Tempo --> Requisicao_API : Tempo >= 1 Hora
+    Processar_Filtro_Tempo --> Verificar_Botao : Tempo < 1 Hora
+
+    state Requisicao_API {
+        [*] --> GET_HTTP : Efetua chamada HTTPS GET
+        GET_HTTP --> JSON_Parsing : Desserializa payload da API
+        JSON_Parsing --> Atualizar_Saidas : Atualiza LEDs e Renderiza Interface Gráfica
+    }
+    Requisicao_API --> Verificar_Botao
 ```
 
 ---

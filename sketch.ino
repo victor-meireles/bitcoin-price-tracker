@@ -22,7 +22,7 @@ const String url = "https://min-api.cryptocompare.com/data/pricemultifull?fsyms=
 // Máquina de Estados e Temporização Assíncrona
 bool sistemaAtivo = true;
 unsigned long ultimoTempoRequisicao = 0;
-const unsigned long intervaloRequisicao = 15000; // 15 segundos
+const unsigned long intervaloRequisicao = 3600000; // 1h
 bool ultimoEstadoBotao = HIGH;
 
 const unsigned char bitcoinIcon [] PROGMEM = {

@@ -117,8 +117,8 @@ stateDiagram-v2
         }
         
         state Processar_Filtro_Tempo <<choice>>
-        Processar_Filtro_Tempo --> Requisicao_API : se Tempo Atual - Último Tempo >= 1 Hora
-        Processar_Filtro_Tempo --> Verificar_Botao : se Tempo < 1 Hora
+        Processar_Filtro_Tempo --> Requisicao_API : se Tempo Atual - Último Tempo maior ou igual a 1 Hora
+        Processar_Filtro_Tempo --> Verificar_Botao : se Tempo menor que 1 Hora
         
         state Requisicao_API {
             GET_HTTP : Efetua chamada HTTPS GET

@@ -4,6 +4,7 @@
 #include <WiFiClientSecure.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
+#include "secrets.h"
 
 #define SCREEN_WIDTH 128 
 #define SCREEN_HEIGHT 64 
@@ -17,10 +18,10 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 const char* ssid = SECRETS_SSID;
 const char* password = SECRETS_PASSWORD;
-const String url = "https://min-api.cryptocompare.com/data/pricemultifull?fsyms=BTC&tsyms=USD";
+const String urlBase = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true";
 
 // Máquina de Estados e Temporização Assíncrona
-bool sistemaAtivo = true;
+bool sistemaAtivo = true; 
 unsigned long ultimoTempoRequisicao = 0;
 const unsigned long intervaloRequisicao = 3600000; // 1 hora
 bool ultimoEstadoBotao = HIGH;
@@ -44,14 +45,12 @@ void printCenter(const String buf, int x, int y) {
 void verificarBotao() {
   bool estadoAtualBotao = digitalRead(BOTAO_POWER);
   static unsigned long ultimoTempoDebounce = 0;
-  const unsigned long tempoEsperaDebounce = 200; // Tempo para ignorar trepidações
+  const unsigned long tempoEsperaDebounce = 200; 
 
-  // Detecta que o botão estava pressionado (LOW) e acabou de ser solto (HIGH)
   if (estadoAtualBotao == HIGH && ultimoEstadoBotao == LOW) {
-    // Só processa o clique se já passou tempo suficiente desde a última ação legítima
     if (millis() - ultimoTempoDebounce > tempoEsperaDebounce) {
-      sistemaAtivo = !sistemaAtivo; // Inverte o estado (Liga / Desliga)
-      ultimoTempoDebounce = millis(); // Registra o momento deste clique válido
+      sistemaAtivo = !sistemaAtivo; 
+      ultimoTempoDebounce = millis(); 
       
       if (!sistemaAtivo) {
         Serial.println("\n[SISTEMA] Modo de Espera Ativo (Desligado)");
@@ -66,12 +65,10 @@ void verificarBotao() {
         display.setCursor(0,0);
         display.println("Buscando Dados...");
         display.display();
-        // Força a requisição imediata ao ligar
         ultimoTempoRequisicao = millis() - intervaloRequisicao; 
       }
     }
   }
-  
   ultimoEstadoBotao = estadoAtualBotao;
 }
 
@@ -81,11 +78,11 @@ void executarRequisicaoAPI() {
     client.setInsecure();
     HTTPClient http;
     
-    Serial.println("[HTTP] Conectando à API CryptoCompare...");
-    if (http.begin(client, url)) {
+    Serial.println("[HTTP] Conectando à API CoinGecko...");
+  
+    if (http.begin(client, urlBase)) {
       int httpCode = http.GET();
       
-      // Se o usuário apertar o botão exatamente durante a resposta da rede, interrompe a renderização
       verificarBotao();
       if (!sistemaAtivo) {
         http.end();
@@ -94,11 +91,11 @@ void executarRequisicaoAPI() {
 
       if (httpCode == HTTP_CODE_OK) {
         String payload = http.getString();
-        StaticJsonDocument<1536> doc;
+        StaticJsonDocument<512> doc;
         deserializeJson(doc, payload);
 
-        float price = doc["RAW"]["BTC"]["USD"]["PRICE"];
-        float pct24h = doc["RAW"]["BTC"]["USD"]["CHANGEPCT24HOUR"];
+        float price = doc["bitcoin"]["usd"];
+        float pct24h = doc["bitcoin"]["usd_24h_change"];
 
         if (pct24h > 0) {
           digitalWrite(LED_VERDE, HIGH);
@@ -165,27 +162,21 @@ void setup() {
   display.display();
   
   delay(1500);
-  
   display.clearDisplay();
   display.display();
   
-  // Sincroniza o estado inicial do botão para evitar leituras fantasmas do boot
   ultimoEstadoBotao = digitalRead(BOTAO_POWER);
-
-  // Configura o temporizador para disparar a primeira requisição HTTP imediatamente
   ultimoTempoRequisicao = millis() - intervaloRequisicao;
 }
 
 void loop() {
-  // Monitoramento do botão em tempo de execução contínuo (Sem travar por delays)
   verificarBotao();
 
-  // Executa o bloco de requisição apenas se o sistema estiver ligado E o tempo expirou
   if (sistemaAtivo) {
     unsigned long tempoAtual = millis();
     if (tempoAtual - ultimoTempoRequisicao >= intervaloRequisicao) {
       executarRequisicaoAPI();
-      ultimoTempoRequisicao = tempoAtual; // Reinicia o cronômetro
+      ultimoTempoRequisicao = tempoAtual; 
     }
   }
 }

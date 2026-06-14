@@ -5,7 +5,7 @@
 [![Platform](https://img.shields.io/badge/Platform-ESP32--C3-orange?style=for-the-badge&logo=espressif)](https://www.espressif.com/en/products/socs/esp32-c3)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
-Este projeto consiste em um sistema embarcado desenvolvido para o microcontrolador **ESP32-C3** que consome em tempo real os dados de mercado do Bitcoin (BTC) em relação ao Dólar Americano (USD). Utilizando chamadas seguras **HTTPS** direcionadas à API pública da *CryptoCompare*, o dispositivo processa as informações financeiras e atualiza dinamicamente uma interface gráfica em um display OLED I2C, além de acionar atuadores visuais baseados em LEDs para sinalizar o comportamento do mercado (alta ou queda nas últimas 24 horas).
+Este projeto consiste em um sistema embarcado desenvolvido para o microcontrolador **ESP32-C3** que consome em tempo real os dados de mercado do Bitcoin (BTC) em relação ao Dólar Americano (USD). Utilizando chamadas seguras **HTTPS** direcionadas à API pública da *CoinGecko*, o dispositivo processa as informações financeiras e atualiza dinamicamente uma interface gráfica em um display OLED I2C, além de acionar atuadores visuais baseados em LEDs para sinalizar o comportamento do mercado (alta ou queda nas últimas 24 horas).
 
 O firmware foi implementado em C++/Arduino adotando boas práticas de sistemas operacionais e tempo real, incluindo concorrência cooperativa por meio de temporização não-bloqueante (`millis()`), filtro de tratamento físico (*debounce*) para botões e controle estruturado de estados (*Standby* e *Ativo*).
 
@@ -169,8 +169,8 @@ if (estadoAtualBotao == HIGH && ultimoEstadoBotao == LOW) {
 
 ### 3. Modelo de Dados JSON da API
 A consulta segura retorna um payload do tipo `application/json` estruturado. A extração dos valores utiliza filtros da biblioteca `ArduinoJson` para acessar a estrutura aninhada:
-* **Preço Atual**: `doc["RAW"]["BTC"]["USD"]["PRICE"]` (Tipo: `float`)
-* **Variação 24h**: `doc["RAW"]["BTC"]["USD"]["CHANGEPCT24HOUR"]` (Tipo: `float`)
+* **Preço Atual**: `doc["bitcoin"]["usd"]` (Tipo: `float`)
+* **Variação 24h**: `doc["bitcoin"]["usd_24h_change"]` (Tipo: `float`)
 
 ---
 

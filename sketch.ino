@@ -73,13 +73,35 @@ void verificarBotao() {
 }
 
 void executarRequisicaoAPI() {
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("[WIFI] Conexão perdida. Tentando reconectar...");
+    display.clearDisplay();
+    printCenter("Reconectando Wi-Fi...", 0, 32);
+    display.display();
+    
+    WiFi.disconnect();
+    WiFi.begin(ssid, password);
+    
+    unsigned long tempoInicioTentativa = millis();
+    while (WiFi.status() != WL_CONNECTED && millis() - tempoInicioTentativa < 5000) {
+      verificarBotao(); // Mantém o botão ativo mesmo durante a tentativa
+      delay(250);
+    }
+    
+    if (WiFi.status() == WL_CONNECTED) {
+      Serial.println("[WIFI] Reconectado com sucesso!");
+    } else {
+      Serial.println("[WIFI] Falha na reconexão. Tentará novamente no próximo ciclo.");
+      return;
+    }
+  }
+
   if (WiFi.status() == WL_CONNECTED) {
     WiFiClientSecure client;
     client.setInsecure();
     HTTPClient http;
     
     Serial.println("[HTTP] Conectando à API CoinGecko...");
-  
     if (http.begin(client, urlBase)) {
       int httpCode = http.GET();
       

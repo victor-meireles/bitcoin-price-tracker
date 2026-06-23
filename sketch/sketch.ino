@@ -12,16 +12,15 @@
 #define SCREEN_ADDRESS 0x3C 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
-#define LED_VERDE 10
-#define LED_VERMELHO 7
-#define BOTAO_POWER 3 
+#define LED_VERDE    18  
+#define LED_VERMELHO 19  
+#define BOTAO_POWER  15  
 
 const char* ssid = SECRETS_SSID;
 const char* password = SECRETS_PASSWORD;
 const String urlBase = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true";
 
-// Máquina de Estados e Temporização Assíncrona
-bool sistemaAtivo = true; 
+bool sistemaAtivo = true;
 unsigned long ultimoTempoRequisicao = 0;
 const unsigned long intervaloRequisicao = 3600000; // 1 hora
 bool ultimoEstadoBotao = HIGH;
@@ -47,7 +46,7 @@ void verificarBotao() {
   static unsigned long ultimoTempoDebounce = 0;
   const unsigned long tempoEsperaDebounce = 200; 
 
-  if (estadoAtualBotao == HIGH && ultimoEstadoBotao == LOW) {
+  if (estadoAtualBotao == LOW && ultimoEstadoBotao == HIGH) {
     if (millis() - ultimoTempoDebounce > tempoEsperaDebounce) {
       sistemaAtivo = !sistemaAtivo; 
       ultimoTempoDebounce = millis(); 
@@ -59,7 +58,7 @@ void verificarBotao() {
         display.clearDisplay();
         display.display(); 
       } else {
-        Serial.println("\n[SISTEMA] Retornando à busca ativa de dados...");
+        Serial.println("\n[SISTEMA] Retornando a busca ativa...");
         display.clearDisplay();
         display.setTextSize(1);
         display.setCursor(0,0);
@@ -74,7 +73,7 @@ void verificarBotao() {
 
 void executarRequisicaoAPI() {
   if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("[WIFI] Conexão perdida. Tentando reconectar...");
+    Serial.println("[WIFI] Conexao perdida. Tentando reconectar...");
     display.clearDisplay();
     printCenter("Reconectando Wi-Fi...", 0, 32);
     display.display();
@@ -84,15 +83,8 @@ void executarRequisicaoAPI() {
     
     unsigned long tempoInicioTentativa = millis();
     while (WiFi.status() != WL_CONNECTED && millis() - tempoInicioTentativa < 5000) {
-      verificarBotao(); // Mantém o botão ativo mesmo durante a tentativa
+      verificarBotao(); 
       delay(250);
-    }
-    
-    if (WiFi.status() == WL_CONNECTED) {
-      Serial.println("[WIFI] Reconectado com sucesso!");
-    } else {
-      Serial.println("[WIFI] Falha na reconexão. Tentará novamente no próximo ciclo.");
-      return;
     }
   }
 
@@ -101,7 +93,7 @@ void executarRequisicaoAPI() {
     client.setInsecure();
     HTTPClient http;
     
-    Serial.println("[HTTP] Conectando à API CoinGecko...");
+    Serial.println("[HTTP] Conectando a API CoinGecko...");
     if (http.begin(client, urlBase)) {
       int httpCode = http.GET();
       
@@ -116,8 +108,8 @@ void executarRequisicaoAPI() {
         StaticJsonDocument<512> doc;
         deserializeJson(doc, payload);
 
-        float price = doc["bitcoin"]["usd"];
-        float pct24h = doc["bitcoin"]["usd_24h_change"];
+        double price = doc["bitcoin"]["usd"];
+        double pct24h = doc["bitcoin"]["usd_24h_change"];
 
         if (pct24h > 0) {
           digitalWrite(LED_VERDE, HIGH);
@@ -125,9 +117,12 @@ void executarRequisicaoAPI() {
         } else if (pct24h < 0) {
           digitalWrite(LED_VERDE, LOW);
           digitalWrite(LED_VERMELHO, HIGH);
+        } else {
+          digitalWrite(LED_VERDE, HIGH);
+          digitalWrite(LED_VERMELHO, HIGH);
         }
 
-        Serial.printf("[HTTP] Preço: $%.2f | Variação 24h: %.2f%%\n", price, pct24h);
+        Serial.printf("[HTTP] Preco: $%.2f | Variacao 24h: %.2f%%\n", price, pct24h);
 
         display.clearDisplay();
         display.drawBitmap((128/2)-(24/2), 0, bitcoinIcon, 24, 24, WHITE);
@@ -149,43 +144,45 @@ void executarRequisicaoAPI() {
 
 void setup() {
   Serial.begin(115200);
-  Wire.begin(8, 9);
+  Wire.begin(21, 22); 
   
-  pinMode(LED_VERDE, OUTPUT);
   pinMode(LED_VERMELHO, OUTPUT);
+  pinMode(LED_VERDE, OUTPUT);
   pinMode(BOTAO_POWER, INPUT_PULLUP);
   
+  digitalWrite(LED_VERDE, LOW);
+  digitalWrite(LED_VERMELHO, LOW);
+
+  Serial.println("\n--- BOOT INICIADO ---");
+  Serial.println("Testando a conexao com o Display OLED...");
+  
   if (!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
-    for (;;);
+    Serial.println("ERRO CRITICO: Display OLED nao encontrado!");
+    Serial.println("Verifique os fios de energia (VDD/GND) e dados (SDA/SCK).");
+    for (;;); 
   }
+  
+  Serial.println("Display OLED detectado com sucesso!");
 
   display.clearDisplay();
   display.setTextSize(1);
   display.setTextColor(SSD1306_WHITE);
   display.setCursor(0,0);
   
-  Serial.println("Iniciando Sistema...");
   display.println("Iniciando Sistema...");
-  Serial.println("Conectando ao WiFi...");
   display.println("Conectando ao WiFi:");
   display.display();
 
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
-    Serial.print(".");
     display.print("."); 
     display.display();
   }
   
-  Serial.println("\nWiFi OK!");
   display.println("\nWiFi OK!");
-  display.println("Buscando Dados...");
   display.display();
-  
-  delay(1500);
-  display.clearDisplay();
-  display.display();
+  delay(1000);
   
   ultimoEstadoBotao = digitalRead(BOTAO_POWER);
   ultimoTempoRequisicao = millis() - intervaloRequisicao;

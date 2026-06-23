@@ -20,10 +20,15 @@ const char* ssid = SECRETS_SSID;
 const char* password = SECRETS_PASSWORD;
 const String urlBase = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true";
 
-bool sistemaAtivo = true;
+// O modificador 'volatile' avisa o compilador que essas variáveis 
+// podem mudar a qualquer momento por um evento de hardware externo (o botão)
+volatile bool sistemaAtivo = true;
+volatile bool interfacePrecisaAtualizar = false;
+volatile unsigned long ultimoTempoInterrupcao = 0;
+const unsigned long tempoEsperaDebounce = 200;
+
 unsigned long ultimoTempoRequisicao = 0;
 const unsigned long intervaloRequisicao = 3600000; // 1 hora
-bool ultimoEstadoBotao = HIGH;
 
 const unsigned char bitcoinIcon [] PROGMEM = {
   0x00, 0x7e, 0x00, 0x03, 0xff, 0xc0, 0x07, 0x81, 0xe0, 0x0e, 0x00, 0x70, 0x18, 0x28, 0x18, 0x30, 
@@ -41,34 +46,15 @@ void printCenter(const String buf, int x, int y) {
   display.print(buf);
 }
 
-void verificarBotao() {
-  bool estadoAtualBotao = digitalRead(BOTAO_POWER);
-  static unsigned long ultimoTempoDebounce = 0;
-  const unsigned long tempoEsperaDebounce = 200; 
-
-  if (estadoAtualBotao == LOW && ultimoEstadoBotao == HIGH) {
-    if (millis() - ultimoTempoDebounce > tempoEsperaDebounce) {
-      sistemaAtivo = !sistemaAtivo; 
-      ultimoTempoDebounce = millis(); 
-      
-      if (!sistemaAtivo) {
-        Serial.println("\n[SISTEMA] Modo de Espera Ativo (Desligado)");
-        digitalWrite(LED_VERDE, LOW);
-        digitalWrite(LED_VERMELHO, LOW);
-        display.clearDisplay();
-        display.display(); 
-      } else {
-        Serial.println("\n[SISTEMA] Retornando a busca ativa...");
-        display.clearDisplay();
-        display.setTextSize(1);
-        display.setCursor(0,0);
-        display.println("Buscando Dados...");
-        display.display();
-        ultimoTempoRequisicao = millis() - intervaloRequisicao; 
-      }
-    }
+// Rotina de Serviço de Interrupção (ISR)
+// Executa instantaneamente quando o botão é pressionado, parando qualquer delay()
+void IRAM_ATTR tratarBotaoISR() {
+  unsigned long tempoAtual = millis();
+  if (tempoAtual - ultimoTempoInterrupcao > tempoEsperaDebounce) {
+    sistemaAtivo = !sistemaAtivo; 
+    interfacePrecisaAtualizar = true; // Sinaliza para o loop principal que a tela deve mudar
+    ultimoTempoInterrupcao = tempoAtual; 
   }
-  ultimoEstadoBotao = estadoAtualBotao;
 }
 
 void executarRequisicaoAPI() {
@@ -83,7 +69,7 @@ void executarRequisicaoAPI() {
     
     unsigned long tempoInicioTentativa = millis();
     while (WiFi.status() != WL_CONNECTED && millis() - tempoInicioTentativa < 5000) {
-      verificarBotao(); 
+      if (!sistemaAtivo) return; // Aborta a reconexão se o botão for pressionado
       delay(250);
     }
   }
@@ -97,7 +83,6 @@ void executarRequisicaoAPI() {
     if (http.begin(client, urlBase)) {
       int httpCode = http.GET();
       
-      verificarBotao();
       if (!sistemaAtivo) {
         http.end();
         return;
@@ -150,6 +135,10 @@ void setup() {
   pinMode(LED_VERDE, OUTPUT);
   pinMode(BOTAO_POWER, INPUT_PULLUP);
   
+  // Anexa a interrupção física ao pino do botão. 
+  // FALLING significa que dispara no momento exato de "Apertar" (passa de 3.3v para GND)
+  attachInterrupt(digitalPinToInterrupt(BOTAO_POWER), tratarBotaoISR, FALLING);
+  
   digitalWrite(LED_VERDE, LOW);
   digitalWrite(LED_VERMELHO, LOW);
 
@@ -175,21 +164,42 @@ void setup() {
 
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
+    if (!sistemaAtivo) break; // Sai do loop de conexão se o usuário cancelar
     delay(500);
     display.print("."); 
     display.display();
   }
   
-  display.println("\nWiFi OK!");
-  display.display();
-  delay(1000);
+  if (sistemaAtivo) {
+    display.println("\nWiFi OK!");
+    display.display();
+    delay(1000);
+  }
   
-  ultimoEstadoBotao = digitalRead(BOTAO_POWER);
   ultimoTempoRequisicao = millis() - intervaloRequisicao;
 }
 
 void loop() {
-  verificarBotao();
+  // Trata a alteração visual fora da interrupção (Boas práticas I2C)
+  if (interfacePrecisaAtualizar) {
+    interfacePrecisaAtualizar = false;
+    
+    if (!sistemaAtivo) {
+      Serial.println("\n[SISTEMA] Modo de Espera Ativo (Desligado)");
+      digitalWrite(LED_VERDE, LOW);
+      digitalWrite(LED_VERMELHO, LOW);
+      display.clearDisplay();
+      display.display(); 
+    } else {
+      Serial.println("\n[SISTEMA] Retornando a busca ativa...");
+      display.clearDisplay();
+      display.setTextSize(1);
+      display.setCursor(0,0);
+      display.println("Buscando Dados...");
+      display.display();
+      ultimoTempoRequisicao = millis() - intervaloRequisicao; // Força execução instantânea
+    }
+  }
 
   if (sistemaAtivo) {
     unsigned long tempoAtual = millis();

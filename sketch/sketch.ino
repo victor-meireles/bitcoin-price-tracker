@@ -38,6 +38,19 @@ const unsigned char bitcoinIcon [] PROGMEM = {
   0x81, 0xe0, 0x03, 0xff, 0xc0, 0x00, 0x7e, 0x00
 };
 
+const char* getWiFiStatusString(wl_status_t status) {
+  switch (status) {
+    case WL_IDLE_STATUS:     return "IDLE (Inativo/Tentando)";
+    case WL_NO_SSID_AVAIL:   return "NO_SSID_AVAIL (Rede nao encontrada)";
+    case WL_SCAN_COMPLETED:  return "SCAN_COMPLETED (Varredura concluida)";
+    case WL_CONNECTED:       return "CONNECTED (Conectado)";
+    case WL_CONNECT_FAILED:  return "CONNECT_FAILED (Senha incorreta)";
+    case WL_CONNECTION_LOST: return "CONNECTION_LOST (Conexao perdida)";
+    case WL_DISCONNECTED:    return "DISCONNECTED (Desconectado/Aguardando)";
+    default:                 return "DESCONHECIDO";
+  }
+}
+
 void printCenter(const String buf, int x, int y) {
   int16_t x1, y1;
   uint16_t w, h;
@@ -71,6 +84,16 @@ void executarRequisicaoAPI() {
     while (WiFi.status() != WL_CONNECTED && millis() - tempoInicioTentativa < 5000) {
       if (!sistemaAtivo) return; // Aborta a reconexão se o botão for pressionado
       delay(250);
+    }
+
+    if (WiFi.status() != WL_CONNECTED && sistemaAtivo) {
+      WiFi.disconnect();
+      WiFi.begin("Wokwi-GUEST", "");
+      tempoInicioTentativa = millis();
+      while (WiFi.status() != WL_CONNECTED && millis() - tempoInicioTentativa < 5000) {
+        if (!sistemaAtivo) return;
+        delay(250);
+      }
     }
   }
 
@@ -162,15 +185,63 @@ void setup() {
   display.println("Conectando ao WiFi:");
   display.display();
 
+  Serial.print("Conectando ao WiFi: ");
+  Serial.println(ssid);
+  
+  WiFi.mode(WIFI_STA);
+  WiFi.disconnect();
+  delay(100);
   WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
-    if (!sistemaAtivo) break; // Sai do loop de conexão se o usuário cancelar
+  
+  unsigned long tempoInicio = millis();
+  bool conectado = false;
+  wl_status_t ultimoStatus = WL_IDLE_STATUS;
+  
+  while (WiFi.status() != WL_CONNECTED && millis() - tempoInicio < 15000) { // Aumentado para 15 segundos
+    if (!sistemaAtivo) break;
     delay(500);
     display.print("."); 
     display.display();
+    
+    wl_status_t statusAtual = WiFi.status();
+    if (statusAtual != ultimoStatus) {
+      Serial.printf("[WIFI] Status: %s (%d)\n", getWiFiStatusString(statusAtual), statusAtual);
+      ultimoStatus = statusAtual;
+    }
   }
   
-  if (sistemaAtivo) {
+  if (WiFi.status() == WL_CONNECTED) {
+    conectado = true;
+    Serial.println("\n[WIFI] Conectado com sucesso!");
+  } else if (sistemaAtivo) {
+    Serial.println("\n[WIFI] Falha na rede principal. Tentando Wokwi-GUEST para teste...");
+    display.println("\nTentando Wokwi-GUEST...");
+    display.display();
+    
+    WiFi.disconnect();
+    WiFi.begin("Wokwi-GUEST", "");
+    
+    tempoInicio = millis();
+    ultimoStatus = WL_IDLE_STATUS;
+    while (WiFi.status() != WL_CONNECTED && millis() - tempoInicio < 8000) {
+      if (!sistemaAtivo) break;
+      delay(500);
+      display.print("."); 
+      display.display();
+      
+      wl_status_t statusAtual = WiFi.status();
+      if (statusAtual != ultimoStatus) {
+        Serial.printf("[WIFI] Status (Wokwi): %s (%d)\n", getWiFiStatusString(statusAtual), statusAtual);
+        ultimoStatus = statusAtual;
+      }
+    }
+    
+    if (WiFi.status() == WL_CONNECTED) {
+      conectado = true;
+    }
+  }
+  
+  if (conectado && sistemaAtivo) {
     display.println("\nWiFi OK!");
     display.display();
     delay(1000);

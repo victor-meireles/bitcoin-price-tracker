@@ -5,16 +5,13 @@
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 #include "secrets.h"
+#include "config.h"
 
 #define SCREEN_WIDTH 128 
 #define SCREEN_HEIGHT 64 
 #define OLED_RESET     -1 
 #define SCREEN_ADDRESS 0x3C 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
-
-#define LED_VERDE    18  
-#define LED_VERMELHO 19  
-#define BOTAO_POWER  15  
 
 const char* ssid = SECRETS_SSID;
 const char* password = SECRETS_PASSWORD;
@@ -104,6 +101,7 @@ void executarRequisicaoAPI() {
     
     Serial.println("[HTTP] Conectando a API CoinGecko...");
     if (http.begin(client, urlBase)) {
+      http.setTimeout(3000);
       int httpCode = http.GET();
       
       if (!sistemaAtivo) {
@@ -152,7 +150,7 @@ void executarRequisicaoAPI() {
 
 void setup() {
   Serial.begin(115200);
-  Wire.begin(21, 22); 
+  Wire.begin(I2C_SDA, I2C_SCL); 
   
   pinMode(LED_VERMELHO, OUTPUT);
   pinMode(LED_VERDE, OUTPUT);

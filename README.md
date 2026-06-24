@@ -10,6 +10,7 @@ Este projeto adota **boas práticas de programação de sistemas embarcados**, i
 * Filtro de ruído por software (*debouncing* temporal).
 * Isolamento de credenciais privadas em arquivo de configuração separado.
 * Tratamento inteligente de perdas de conexão Wi-Fi com fluxo de reconexão automática e cancelamento instantâneo.
+* **Abstração de Hardware Multiplataforma**: Uso de um arquivo [config.h](file:///home/victor-meireles/Documents/faculdade/iot/bitcoin-price-tracker/sketch/config.h) centralizado para gerenciar a pinagem entre a placa real e o simulador sem alterar o código principal.
 
 ---
 
@@ -39,9 +40,9 @@ Este projeto adota **boas práticas de programação de sistemas embarcados**, i
 
 Este projeto foi projetado para ser compatível tanto com o **ESP32 Classic** (placa física de desenvolvimento padrão de 30 pinos) quanto com o **ESP32-C3** (placa moderna focada em IoT usada na simulação do Wokwi). 
 
-> [!WARNING]
-> **Atenção aos pinos configurados!**
-> Os pinos padrão de hardware para comunicação I2C e portas GPIO variam entre o ESP32 Classic e o ESP32-C3. Certifique-se de ajustar a pinagem no início do arquivo [sketch/sketch.ino](file:///home/victor-meireles/Documents/faculdade/iot/bitcoin-price-tracker/sketch/sketch.ino) dependendo do seu ambiente.
+> [!NOTE]
+> **Abstração de Hardware**:
+> Para facilitar o desenvolvimento e testes, criamos o arquivo [config.h](file:///home/victor-meireles/Documents/faculdade/iot/bitcoin-price-tracker/sketch/config.h) que centraliza e permite alternar a pinagem de forma limpa entre o ESP32 físico e o ESP32-C3 simulado no Wokwi apenas alterando a macro ativa.
 
 ### Tabela Comparativa de Pinagem
 
@@ -61,7 +62,7 @@ Este projeto foi projetado para ser compatível tanto com o **ESP32 Classic** (p
 
 Abaixo estão descritas as conexões de componentes para ambos os cenários de desenvolvimento:
 
-#### Cenário A: Placa Física (ESP32 Classic) - *Configuração ativa no arquivo [sketch/sketch.ino](file:///home/victor-meireles/Documents/faculdade/iot/bitcoin-price-tracker/sketch/sketch.ino)*
+#### Cenário A: Placa Física (ESP32 Classic) - *Configuração ativa por padrão no arquivo [config.h](file:///home/victor-meireles/Documents/faculdade/iot/bitcoin-price-tracker/sketch/config.h)*
 
 ```mermaid
 graph TD
@@ -295,14 +296,10 @@ Você pode simular todo o circuito virtualmente no **Wokwi**, sem gastar nada co
    git clone https://github.com/seu-usuario/bitcoin-price-tracker.git
    ```
 3. Abra a pasta do projeto no VS Code.
-4. **Passo Crítico para Compilar**: Como o simulador Wokwi está mapeado com os pinos de simulação do **ESP32-C3** em [diagram.json](file:///home/victor-meireles/Documents/faculdade/iot/bitcoin-price-tracker/diagram.json), você deve alterar temporariamente as definições de pinos no topo de [sketch/sketch.ino](file:///home/victor-meireles/Documents/faculdade/iot/bitcoin-price-tracker/sketch/sketch.ino) para:
+4. **Configuração de Ambiente**: Como o simulador Wokwi está mapeado com os pinos de simulação do **ESP32-C3** em [diagram.json](file:///home/victor-meireles/Documents/faculdade/iot/bitcoin-price-tracker/diagram.json), abra o arquivo [config.h](file:///home/victor-meireles/Documents/faculdade/iot/bitcoin-price-tracker/sketch/config.h) e comente a definição do ESP32 físico, descomentando o Wokwi:
    ```cpp
-   #define LED_VERDE    10
-   #define LED_VERMELHO 7
-   #define BOTAO_POWER  3
-   
-   // E no setup(), ajuste a inicialização do I2C:
-   Wire.begin(8, 9);
+   // #define ESP32_FISICO_DEVKIT
+   #define ESP32_C3_WOKWI
    ```
 5. Crie um arquivo `sketch/secrets.h` com dados fictícios para a simulação (o Wokwi simula conexões de internet automaticamente através de uma rede interna virtual chamada `Wokwi-GUEST`):
    ```cpp
@@ -382,7 +379,7 @@ Edite o arquivo [sketch/secrets.h](file:///home/victor-meireles/Documents/faculd
 2. Na IDE, selecione a placa correspondente: `Ferramentas -> Placa -> ESP32 Arduino -> ESP32 Dev Module` (ou o modelo correspondente da sua placa).
 3. Selecione a porta serial correta em `Ferramentas -> Porta`.
 4. Abra o arquivo [sketch/sketch.ino](file:///home/victor-meireles/Documents/faculdade/iot/bitcoin-price-tracker/sketch/sketch.ino).
-5. Certifique-se de que a pinagem física no topo do arquivo está definida corretamente para os pinos do ESP32 Classic (`18`, `19`, `15` e `Wire.begin(21, 22)`).
+5. No arquivo [config.h](file:///home/victor-meireles/Documents/faculdade/iot/bitcoin-price-tracker/sketch/config.h), certifique-se de que a macro ativa correspondente é a do hardware físico (`ESP32_FISICO_DEVKIT` ativa e `ESP32_C3_WOKWI` comentada).
 6. Clique no botão de **Carregar (Upload)**.
 7. Quando a gravação estiver concluída, abra o **Monitor Serial** (`Ferramentas -> Monitor Serial`) e configure o baudrate para **115200 baud** para acompanhar as mensagens de depuração estruturadas geradas pelo firmware.
 
@@ -393,6 +390,7 @@ Edite o arquivo [sketch/secrets.h](file:///home/victor-meireles/Documents/faculd
 ```text
 ├── sketch/
 │   ├── sketch.ino        # Código-fonte principal em C++/Arduino contendo a lógica do sistema
+│   ├── config.h          # Arquivo de configuração que gerencia a pinagem e o ambiente ativo (ESP32 físico vs Wokwi)
 │   └── secrets.h         # Configuração isolada e segura de credenciais de Wi-Fi e tokens
 ├── diagram.json          # Arquivo de configuração de hardware e fios para o simulador Wokwi
 ├── libraries.txt         # Lista das dependências do firmware instaladas automaticamente pelo Wokwi

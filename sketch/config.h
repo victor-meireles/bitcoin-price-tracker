@@ -14,7 +14,7 @@
   // Configuração para a placa ESP32 Física
   #define LED_VERDE        18
   #define LED_VERMELHO     19
-  #define BOTAO_POWER      15
+  #define BOTAO_POWER      23
   #define I2C_SDA          21
   #define I2C_SCL          22
 #elif defined(ESP32_C3_WOKWI)

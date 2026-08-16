@@ -52,7 +52,7 @@ Este projeto foi projetado para ser compatível tanto com o **ESP32 Classic** (p
 | **OLED SCL** | Barramento de Clock I2C | **GPIO 22** | **GPIO 9** | Saída de Clock | Sincronismo de clock I2C. |
 | **LED Verde** | Sinalizador de Alta | **GPIO 18** | **GPIO 10** | Saída Digital | Ativado se a variação diária for $> 0\%$. Requer resistor de $220\Omega$. |
 | **LED Vermelho** | Sinalizador de Queda | **GPIO 19** | **GPIO 7** | Saída Digital | Ativado se a variação diária for $< 0\%$. Requer resistor de $220\Omega$. |
-| **Botão Power** | Alterna Standby / Ativo | **GPIO 15** | **GPIO 3** | Entrada Digital | Configurado como `INPUT_PULLUP` (Pressionar leva ao GND). |
+| **Botão Power** | Alterna Standby / Ativo | **GPIO 23** | **GPIO 3** | Entrada Digital | Configurado como `INPUT_PULLUP` (Pressionar leva ao GND). |
 | **Alimentação** | Linha de Energia positiva | **3V3** | **3V3** | Alimentação | Tensão operacional do display e LEDs (3.3V). |
 | **GND** | Linha de Terra comum | **GND** | **GND** | Referência (0V) | Terra comum a todos os componentes. |
 
@@ -71,7 +71,7 @@ graph TD
         G22[GPIO 22 - SCL]
         G18[GPIO 18 - Digital Out]
         G19[GPIO 19 - Digital Out]
-        G15[GPIO 15 - Interrupt In PULLUP]
+        G23[GPIO 23 - Interrupt In PULLUP]
         V33["3V3 (Power Out)"]
         GND_ESP["GND (Ground)"]
     end
@@ -113,7 +113,7 @@ graph TD
     LED_R --> GND_ESP
 
     %% Conexões Botão
-    G15 <--> BTN
+    G23 <--> BTN
     BTN <--> GND_ESP
 ```
 
@@ -182,7 +182,7 @@ Para tornar este projeto didático, abaixo estão detalhados os principais funda
 
 Em vez de verificar constantemente no loop se o botão foi pressionado (técnica conhecida como *polling*, que desperdiça processamento e gera atrasos), o firmware configura uma **Interrupção Externa de Hardware**.
 
-Quando o botão de controle (GPIO 15 no ESP32 Classic) é pressionado, a execução do programa principal é pausada instantaneamente pelo processador para chamar a função de interrupção `tratarBotaoISR()`:
+Quando o botão de controle (GPIO 23 no ESP32 Classic) é pressionado, a execução do programa principal é pausada instantaneamente pelo processador para chamar a função de interrupção `tratarBotaoISR()`:
 
 ```cpp
 void IRAM_ATTR tratarBotaoISR() {
@@ -342,7 +342,7 @@ Siga o diagrama físico indicado para o **Cenário A** na seção de arquitetura
 4. Insira os LEDs:
    * **Verde**: Conecte o pino digital GPIO 18 a uma extremidade do resistor de $220\Omega$. A outra ponta do resistor deve ir ao terminal positivo (Anodo - perna mais longa) do LED Verde. O terminal negativo (Catodo - perna curta) vai ao GND comum.
    * **Vermelho**: Repita o mesmo procedimento conectando o pino digital GPIO 19 ao resistor de $220\Omega$, que por sua vez liga ao anodo do LED Vermelho. O catodo vai ao GND comum.
-5. Insira o Botão: Ligue uma das pernas do Push Button ao pino GPIO 15 do ESP32. Ligue a outra perna do botão diretamente ao GND comum.
+5. Insira o Botão: Ligue uma das pernas do Push Button ao pino GPIO 23 do ESP32. Ligue a outra perna do botão diretamente ao GND comum.
 
 #### 3. Configuração de Credenciais WiFi e API
 Edite o arquivo [sketch/secrets.h](file:///home/victor-meireles/Documents/faculdade/iot/bitcoin-price-tracker/sketch/secrets.h) e insira as credenciais de acesso da sua rede sem fio doméstica ou hotspot do celular:

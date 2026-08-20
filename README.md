@@ -174,6 +174,37 @@ graph TD
 
 ---
 
+### 💡 Guia Rápido: Escolha de GPIOs para Botões (Pull-Up)
+
+A conexão de botões no ESP32 com `pinMode(pin, INPUT_PULLUP)` requer atenção à pinagem para evitar falhas de inicialização (*boot*) ou leituras instáveis:
+
+#### 🟢 Pinos Recomendados (Melhores Escolhas)
+* **ESP32 Classic**: **GPIO 23** (*usado no projeto físico*), **GPIO 16, 17, 27, 32, 33** (e GPIO 18, 19, 21, 22 se livres).
+  * Possuem resistores de *pull-up* internos estáveis, suportam interrupções de hardware e não interferem na inicialização.
+  * *Dica*: Pinos RTC (25, 26, 27, 32, 33) também suportam acordar o ESP32 do modo *Deep Sleep*.
+* **ESP32-C3**: **GPIO 3** (*usado na simulação*), **GPIO 0, 1, 4, 5, 6, 7, 10**.
+
+#### 🔴 Pinos a Evitar e Motivos
+* **Pinos de *Strapping* (GPIO 0, 2, 12, 15)**: O microcontrolador lê esses pinos no boot para definir o modo de operação.
+  * *GPIO 0*: Se pressionado no boot, entra em modo de gravação (*Download Mode*) e não inicia o firmware.
+  * *GPIO 12*: Se estiver em nível alto no boot, altera a tensão da Flash para 1.8V, causando **bootloop**.
+  * *GPIO 2*: Conectado ao LED onboard na maioria das placas e afeta a gravação via UART.
+* **Pinos *Input-Only* (GPIO 34, 35, 36, 39)**: **Não possuem pull-up interno no silício**. Se usados sem resistor físico externo ($10\text{k}\Omega$), o pino fica flutuando e gera falsos disparos.
+* **Pinos da Flash SPI (GPIO 6 a 11)**: Conectados internamente à memória Flash. **Nunca utilize** (causa travamento imediato).
+* **Pinos Serial UART0 (GPIO 1 e 3)**: Usados para depuração USB (`Serial.print`) e gravação de código.
+
+#### 📊 Tabela de Referência Rápida (ESP32 Classic)
+
+| Categoria | GPIOs | `INPUT_PULLUP` Interno? | Status | Motivo Principal |
+| :--- | :--- | :---: | :---: | :--- |
+| **Gerais / RTC** | **23**, 16, 17, 27, 32, 33 | ✅ Sim | 🟢 **Ideal** | Sem impacto no boot; pull-up interno funcional; suporte a interrupções. |
+| **Input-Only** | 34, 35, 36, 39 | ❌ Não | 🟡 **Cuidado** | Exige resistor físico externo de pull-up ($10\text{k}\Omega$). |
+| **Strapping Pins** | 0, 2, 12, 15 | ✅ Sim | 🔴 **Evitar** | Afetam a inicialização (ex: GPIO 0 entra em gravação, GPIO 12 causa bootloop). |
+| **Serial UART0** | 1 (TX), 3 (RX) | ✅ Sim | 🔴 **Evitar** | Conflita com o monitor serial e upload de código via USB. |
+| **Flash SPI** | 6 a 11 | ❌ Não | ⛔ **Proibido** | Travamento imediato da CPU (conectados internamente à memória Flash). |
+
+---
+
 ## 🧠 Conceitos de IoT e Lógica de Firmware
 
 Para tornar este projeto didático, abaixo estão detalhados os principais fundamentos técnicos aplicados no desenvolvimento do código:

@@ -12,6 +12,8 @@ Este projeto adota **boas práticas de programação de sistemas embarcados**, i
 * Tratamento inteligente de perdas de conexão Wi-Fi com fluxo de reconexão automática e cancelamento instantâneo.
 * **Abstração de Hardware Multiplataforma**: Uso de um arquivo [config.h](file:///home/victor-meireles/Documents/faculdade/iot/bitcoin-price-tracker/sketch/config.h) centralizado para gerenciar a pinagem entre a placa real e o simulador sem alterar o código principal.
 
+<p align="center"><img src="assets/isometric-working-prototype.jpg" alt="Protótipo final montado e em funcionamento" width="700"></p>
+
 ---
 
 ## 🗺️ Índice
@@ -40,6 +42,8 @@ Este projeto adota **boas práticas de programação de sistemas embarcados**, i
 
 Este projeto foi projetado para ser compatível tanto com o **ESP32 Classic** (placa física de desenvolvimento padrão de 30 pinos) quanto com o **ESP32-C3** (placa moderna focada em IoT usada na simulação do Wokwi). 
 
+<p align="center"><img src="assets/hardware-close-up.jpg" alt="Microcontrolador ESP32 com conexões de jumpers" width="600"></p>
+
 > [!NOTE]
 > **Abstração de Hardware**:
 > Para facilitar o desenvolvimento e testes, criamos o arquivo [config.h](file:///home/victor-meireles/Documents/faculdade/iot/bitcoin-price-tracker/sketch/config.h) que centraliza e permite alternar a pinagem de forma limpa entre o ESP32 físico e o ESP32-C3 simulado no Wokwi apenas alterando a macro ativa.
@@ -67,7 +71,34 @@ Abaixo estão descritas as conexões de componentes para ambos os cenários de d
 ```mermaid
 graph TD
     subgraph ESP32_Classic ["ESP32 DevKit v1 (Classic)"]
-        G21[GPIO 21 - SDA]
+        G21[GPIO 21 - SDA]Atue como um engenheiro de documentação técnica e atualize o arquivo `README.md` do projeto. O seu objetivo é inserir 4 imagens do hardware físico em seções específicas do documento.
+
+Regra de formatação: Todas as imagens devem ser inseridas usando a estrutura HTML abaixo para garantir centralização e controle de tamanho. Assuma que as imagens estão no diretório `assets/`.
+Formato: <p align="center"><img src="assets/NOME_DO_ARQUIVO.jpg" alt="DESCRIÇÃO" width="LARGURA"></p>
+
+Locais exatos de inserção:
+
+1. Hero Image: `oled-live-display.jpg`
+- Largura: width="500"
+- Alt: "Display OLED com preço do Bitcoin e LED verde aceso"
+- Onde inserir: No topo do documento, logo após o parágrafo inicial de introdução e antes da linha divisória (---) do `## 🗺️ Índice`.
+
+2. Detalhe Técnico: `hardware-close-up.jpg`
+- Largura: width="600"
+- Alt: "Microcontrolador ESP32 com conexões de jumpers"
+- Onde inserir: Logo abaixo do cabeçalho `## 🔌 Arquitetura de Hardware e Pinagem` e do seu parágrafo introdutório, mas ANTES do bloco de nota `> [!NOTE] Abstração de Hardware`.
+
+3. Mapa de Montagem: `esp32-hardware-prototype.jpg`
+- Largura: width="800"
+- Alt: "Visão superior do circuito completo na protoboard"
+- Onde inserir: Na seção `#### Cenário B: Montagem em Hardware Físico`, insira logo após o final da lista de itens de `#### 1. Componentes Necessários` e antes do título `#### 2. Montagem Física das Conexões`.
+
+4. Resultado Final: `isometric-working-prototype.jpg`
+- Largura: width="700"
+- Alt: "Protótipo final montado e em funcionamento"
+- Onde inserir: No final da seção `#### 5. Compilação e Gravação no Microcontrolador`, após o item 7 da lista. Adicione o texto em negrito "**Resultado Final Esperado:**" logo acima da tag da imagem.
+
+Preserve todo o restante do texto e formatação original do arquivo README.md. Gere as modificações agora.
         G22[GPIO 22 - SCL]
         G18[GPIO 18 - Digital Out]
         G19[GPIO 19 - Digital Out]
@@ -364,6 +395,8 @@ Se você deseja montar e carregar o firmware em uma placa de desenvolvimento rea
 * 2x Resistores de $220\Omega$ (ligados em série no terminal positivo dos LEDs para limitar a corrente).
 * 1x Micro-chave táctil (Push button).
 * Cabos de conexão (Jumpers) e 1x Protoboard de testes.
+
+<p align="center"><img src="assets/esp32-hardware-prototype.jpg" alt="Visão superior do circuito completo na protoboard" width="800"></p>
 
 #### 2. Montagem Física das Conexões
 Siga o diagrama físico indicado para o **Cenário A** na seção de arquitetura de hardware:

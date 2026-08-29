@@ -1,4 +1,4 @@
-# 🪙 ESP32 IoT Bitcoin Price Tracker & 24h Trend Indicator
+# ₿ ESP32 IoT Bitcoin Price Tracker & 24h Trend Indicator
 
 Este repositório contém o código-fonte, esquemas de simulação e a documentação completa de um rastreador de preços de Bitcoin (BTC/USD) desenvolvido para microcontroladores da família **ESP32**. 
 
@@ -71,34 +71,7 @@ Abaixo estão descritas as conexões de componentes para ambos os cenários de d
 ```mermaid
 graph TD
     subgraph ESP32_Classic ["ESP32 DevKit v1 (Classic)"]
-        G21[GPIO 21 - SDA]Atue como um engenheiro de documentação técnica e atualize o arquivo `README.md` do projeto. O seu objetivo é inserir 4 imagens do hardware físico em seções específicas do documento.
-
-Regra de formatação: Todas as imagens devem ser inseridas usando a estrutura HTML abaixo para garantir centralização e controle de tamanho. Assuma que as imagens estão no diretório `assets/`.
-Formato: <p align="center"><img src="assets/NOME_DO_ARQUIVO.jpg" alt="DESCRIÇÃO" width="LARGURA"></p>
-
-Locais exatos de inserção:
-
-1. Hero Image: `oled-live-display.jpg`
-- Largura: width="500"
-- Alt: "Display OLED com preço do Bitcoin e LED verde aceso"
-- Onde inserir: No topo do documento, logo após o parágrafo inicial de introdução e antes da linha divisória (---) do `## 🗺️ Índice`.
-
-2. Detalhe Técnico: `hardware-close-up.jpg`
-- Largura: width="600"
-- Alt: "Microcontrolador ESP32 com conexões de jumpers"
-- Onde inserir: Logo abaixo do cabeçalho `## 🔌 Arquitetura de Hardware e Pinagem` e do seu parágrafo introdutório, mas ANTES do bloco de nota `> [!NOTE] Abstração de Hardware`.
-
-3. Mapa de Montagem: `esp32-hardware-prototype.jpg`
-- Largura: width="800"
-- Alt: "Visão superior do circuito completo na protoboard"
-- Onde inserir: Na seção `#### Cenário B: Montagem em Hardware Físico`, insira logo após o final da lista de itens de `#### 1. Componentes Necessários` e antes do título `#### 2. Montagem Física das Conexões`.
-
-4. Resultado Final: `isometric-working-prototype.jpg`
-- Largura: width="700"
-- Alt: "Protótipo final montado e em funcionamento"
-- Onde inserir: No final da seção `#### 5. Compilação e Gravação no Microcontrolador`, após o item 7 da lista. Adicione o texto em negrito "**Resultado Final Esperado:**" logo acima da tag da imagem.
-
-Preserve todo o restante do texto e formatação original do arquivo README.md. Gere as modificações agora.
+        G21[GPIO 21 - SDA]
         G22[GPIO 22 - SCL]
         G18[GPIO 18 - Digital Out]
         G19[GPIO 19 - Digital Out]
